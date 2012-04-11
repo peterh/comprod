@@ -1,9 +1,11 @@
 package main
 
 import (
+	"flag"
 	"html/template"
 	"log"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -76,17 +78,18 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	gameTemplate, err := template.ParseFiles("/Users/peterh/src/comprod/templates/game.html")
+	flag.Parse()
+
+	gameTemplate, err := template.ParseFiles(filepath.Join(*root, "templates", "game.html"))
 	if err != nil {
 		log.Fatal("Fatal Error: ", err)
 	}
 
 	http.Handle("/static/",
 		http.StripPrefix("/static/",
-			http.FileServer(http.Dir("/Users/peterh/src/comprod/static/"))))
+			http.FileServer(http.Dir(filepath.Join(*root, "static")))))
 	http.Handle("/", &handler{gameTemplate, newGame()})
 
 	log.Println("comprod started")
 	log.Fatal(http.ListenAndServe(":2012", nil))
 }
-
