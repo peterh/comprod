@@ -9,6 +9,7 @@ import (
 )
 
 var root, data *string
+var port = flag.String("port", ":2012", "TCP port to listen on")
 
 func init() {
 	var r string

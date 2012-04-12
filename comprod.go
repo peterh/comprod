@@ -91,5 +91,5 @@ func main() {
 	http.Handle("/", &handler{gameTemplate, newGame()})
 
 	log.Println("comprod started")
-	log.Fatal(http.ListenAndServe(":2012", nil))
+	log.Fatal(http.ListenAndServe(*port, nil))
 }
