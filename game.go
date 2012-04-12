@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/gob"
+	"log"
 	"math/rand"
+	"os"
 	"time"
 )
 
@@ -19,6 +22,7 @@ type Stock struct {
 }
 
 type gameState struct {
+	Key    []byte
 	Stock  [stockTypes]Stock
 	Player map[string]*Player
 }
@@ -54,11 +58,31 @@ func newGame() *gameState {
 	rand.Seed(int64(year)*1000 + int64(month)*100 + int64(day))
 
 	var g gameState
+	f, err := os.Open(*data)
+	if err == nil {
+		defer f.Close()
+		err = gob.NewDecoder(f).Decode(&g)
+		if err == nil {
+			g.initKey()
+			return &g
+		}
+	}
+
+	// File not found or gob invalid
 	g.Player = make(map[string]*Player)
 	for i := 0; i < stockTypes; i++ {
 		g.Stock[i].Value = startingValue
 		g.Stock[i].Name = g.pickName()
 	}
+	g.newKey()
+	g.initKey()
+
+	f, err = os.Create(*data)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	gob.NewEncoder(f).Encode(&g)
+
 	return &g
 }
-
