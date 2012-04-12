@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-var root, data *string
+var root, data, hostname *string
 var port = flag.String("port", ":2012", "TCP port to listen on")
 
 func init() {
@@ -33,4 +33,10 @@ func init() {
 		path = filepath.Join(my.HomeDir, ".comprodState")
 	}
 	data = flag.String("data", path, "File where game data is stored")
+
+	host, err := os.Hostname()
+	if err != nil {
+		host = "localhost"
+	}
+	hostname = flag.String("hostname", host, "Name used in invitation links")
 }

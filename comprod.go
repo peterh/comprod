@@ -15,6 +15,8 @@ type handler struct {
 	g *gameState
 }
 
+var admin = flag.String("admin", "admin", "Name of administrator")
+
 func login(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/static/login.html", 307)
 }
@@ -91,5 +93,7 @@ func main() {
 	http.Handle("/", &handler{gameTemplate, newGame()})
 
 	log.Println("comprod started")
+	log.Printf("To start, visit http://%s%s/invite?name=%s&i=%x\n", *hostname, *port, *admin, inviteHash(*admin))
+
 	log.Fatal(http.ListenAndServe(*port, nil))
 }
