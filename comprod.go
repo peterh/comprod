@@ -61,13 +61,15 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Value  template.HTML
 	}
 	type data struct {
-		Name   string
-		Stocks []entry
-		Cash   template.HTML
+		Name     string
+		Stocks   []entry
+		Cash     template.HTML
+		NetWorth template.HTML
 	}
 	s := h.g.listStocks()
 	p := h.g.player(name)
 	d := &data{Name: name}
+	nw := p.Cash
 	for k, v := range s {
 		d.Stocks = append(d.Stocks, entry{
 			Name:   v.Name,
@@ -75,8 +77,10 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Shares: p.Shares[k],
 			Value:  formatValue(p.Shares[k] * v.Value),
 		})
+		nw += p.Shares[k] * v.Value
 	}
 	d.Cash = formatValue(p.Cash)
+	d.NetWorth = formatValue(nw)
 	h.t.Execute(w, d)
 }
 
