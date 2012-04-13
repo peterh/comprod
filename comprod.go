@@ -39,15 +39,16 @@ func formatValue(value uint64) template.HTML {
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
 	if len(name) >= 1 {
-		http.SetCookie(w, &http.Cookie{Name: "name", Value: name})
+		http.SetCookie(w, &http.Cookie{Name: "id", Value: name + "/" + cookieHash(name)})
 	} else {
-		c, err := r.Cookie("name")
+		c, err := r.Cookie("id")
 		if err != nil {
 			login(w, r)
 			return
 		}
-		name = c.Value
-		if len(name) < 1 {
+		i := strings.LastIndex(c.Value, "/")
+		name = c.Value[:i]
+		if len(name) < 1 || c.Value[i+1:] != cookieHash(name) {
 			login(w, r)
 			return
 		}
