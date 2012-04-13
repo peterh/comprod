@@ -93,7 +93,7 @@ func main() {
 	http.Handle("/", &handler{gameTemplate, newGame()})
 
 	log.Println("comprod started")
-	log.Printf("To start, visit http://%s%s/invite?name=%s&i=%x\n", *hostname, *port, *admin, inviteHash(*admin))
+	log.Printf("To start, visit http://%s%s/invite?name=%s&i=%s\n", *hostname, *port, *admin, inviteHash(*admin))
 
 	log.Fatal(http.ListenAndServe(*port, nil))
 }

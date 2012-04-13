@@ -4,9 +4,11 @@ import (
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha1"
+	"encoding/base64"
 	"hash"
 	"io"
 	"log"
+	"strings"
 )
 
 var digest hash.Hash
@@ -23,21 +25,27 @@ func (g *gameState) initKey() {
 	digest = hmac.New(sha1.New, g.Key)
 }
 
-func doHash(thing, name string) []byte {
+func doHash(thing, name string) string {
 	digest.Reset()
 	io.WriteString(digest, thing)
 	io.WriteString(digest, name)
-	return digest.Sum(nil)
+	sum := digest.Sum(nil)
+	return strings.TrimRight(base64.URLEncoding.EncodeToString(sum), "=")
 }
 
-func cookieHash(name string) []byte {
+func cookieHash(name string) string {
 	return doHash("cookie:", name)
 }
 
-func inviteHash(name string) []byte {
+func inviteHash(name string) string {
 	return doHash("invite:", name)
 }
 
-func pwdHash(name string) []byte {
-	return doHash("password:", name)
+func pwdHash(name, password string) []byte {
+	digest.Reset()
+	io.WriteString(digest, "password/")
+	io.WriteString(digest, name)
+	io.WriteString(digest, ":")
+	io.WriteString(digest, password)
+	return digest.Sum(nil)
 }
