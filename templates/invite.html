@@ -4,9 +4,12 @@
 </head>
 <body>
 <h1>Commodity Producers</h1>
+<p>Welcome, {{.Name}}.</p>
 <form action="/" method="post">
-<p>Name: <input type="text" name="name">
-Password: <input type="password" name="pw">
+<p>Please select a password:<br>
+<input type="password" name="pw">
+<input type="hidden" name="name" value="{{.Name}}">
+<input type="hidden" name="i" value="{{.Invite}}">
 <input type="submit" value="Go"></p>
 </form>
 </body>

@@ -12,8 +12,9 @@ const stockTypes = 6
 const startingValue = 100
 
 type Player struct {
-	Cash   uint64
-	Shares [stockTypes]uint64
+	Cash     uint64
+	Shares   [stockTypes]uint64
+	Password []byte
 }
 
 type Stock struct {
@@ -27,15 +28,26 @@ type gameState struct {
 	Player map[string]*Player
 }
 
+func (p *Player) SetPassword(pw []byte) {
+	p.Password = pw
+}
+
 func (g *gameState) listStocks() []Stock {
 	return g.Stock[:]
+}
+
+func (g *gameState) hasPlayer(name string) bool {
+	_, ok := g.Player[name]
+	return ok
 }
 
 func (g *gameState) player(name string) *Player {
 	if p, ok := g.Player[name]; ok {
 		return p
 	}
-	return &Player{Cash: 500000}
+	p := &Player{Cash: 500000}
+	g.Player[name] = p
+	return p
 }
 
 func (g *gameState) pickName() string {

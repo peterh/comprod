@@ -2,5 +2,8 @@ body { background-color: AliceBlue; color: DarkBlue; }
 h1 { text-align: center; font-variant: small-caps; }
 h3 { color: black; }
 td { padding-left: 10px; padding-right: 10px; }
+
 tbody>tr:nth-child(even) { background-color: MintCream; }
 tbody>tr:nth-child(odd) { background-color: Ivory; }
+
+.error { color: red; background-color: white; border-color: black; border-width: 2px; border-style:solid; }
