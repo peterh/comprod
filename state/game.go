@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -31,6 +32,7 @@ type gameState struct {
 
 type Game struct {
 	g gameState
+	sync.Mutex
 }
 
 type PlayerInfo struct {
@@ -41,23 +43,36 @@ type PlayerInfo struct {
 }
 
 func (p *PlayerInfo) SetPassword(pw []byte) {
+	p.g.Lock()
 	p.p.Password = pw
+	p.g.Unlock()
 }
 
 func (p *PlayerInfo) CheckPassword(pw []byte) bool {
+	p.g.Lock()
+	defer p.g.Unlock()
 	return bytes.Equal(p.p.Password, pw)
 }
 
 func (g *Game) ListStocks() []Stock {
-	return g.g.Stock[:]
+	g.Lock()
+	defer g.Unlock()
+	rv := make([]Stock, len(g.g.Stock))
+	copy(rv, g.g.Stock[:])
+	return rv
 }
 
 func (g *Game) HasPlayer(name string) bool {
+	g.Lock()
 	_, ok := g.g.Player[name]
+	g.Unlock()
 	return ok
 }
 
 func (g *Game) Player(name string) *PlayerInfo {
+	g.Lock()
+	defer g.Unlock()
+
 	if _, ok := g.g.Player[name]; !ok {
 		p := &Player{Cash: 500000}
 		g.g.Player[name] = p

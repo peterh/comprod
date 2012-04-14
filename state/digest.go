@@ -22,5 +22,7 @@ func (g *gameState) newKey() {
 }
 
 func (g *Game) GetHash() hash.Hash {
+	g.Lock()
+	defer g.Unlock()
 	return hmac.New(sha1.New, g.g.Key)
 }
