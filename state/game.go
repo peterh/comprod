@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"log"
 	"math/rand"
 	"os"
 	"sync"
@@ -34,6 +33,7 @@ type gameState struct {
 type Game struct {
 	g gameState
 	sync.Mutex
+	changed chan<- struct{}
 }
 
 type PlayerInfo struct {
@@ -42,6 +42,8 @@ type PlayerInfo struct {
 	p      *Player
 	g      *Game
 }
+
+var ping struct{}
 
 func (g *gameState) findStock(stock string) int {
 	for k, v := range g.Stock {
@@ -70,6 +72,8 @@ func (p *PlayerInfo) Buy(stock string, lots uint64) error {
 	p.p.Cash -= shares * p.g.g.Stock[idx].Value
 	p.p.Shares[idx] += shares
 
+	p.g.changed <- ping
+
 	// Update caller-visible copies
 	p.Cash = p.p.Cash
 	p.Shares[idx] = p.p.Shares[idx]
@@ -93,6 +97,8 @@ func (p *PlayerInfo) Sell(stock string, lots uint64) error {
 	p.p.Cash += shares * p.g.g.Stock[idx].Value
 	p.p.Shares[idx] -= shares
 
+	p.g.changed <- ping
+
 	// Update caller-visible copies
 	p.Cash = p.p.Cash
 	p.Shares[idx] = p.p.Shares[idx]
@@ -103,6 +109,7 @@ func (p *PlayerInfo) SetPassword(pw []byte) {
 	p.g.Lock()
 	p.p.Password = pw
 	p.g.Unlock()
+	p.g.changed <- struct{}{}
 }
 
 func (p *PlayerInfo) CheckPassword(pw []byte) bool {
@@ -133,6 +140,7 @@ func (g *Game) Player(name string) *PlayerInfo {
 	if _, ok := g.g.Player[name]; !ok {
 		p := &Player{Cash: 100000}
 		g.g.Player[name] = p
+		g.changed <- ping
 	}
 	p := g.g.Player[name]
 
@@ -159,11 +167,15 @@ func New(data string) *Game {
 	rand.Seed(int64(year)*1000 + int64(month)*100 + int64(day))
 
 	var g Game
+	changed := make(chan struct{})
+	g.changed = changed
+
 	f, err := os.Open(data)
 	if err == nil {
 		defer f.Close()
 		err = gob.NewDecoder(f).Decode(&g.g)
 		if err == nil {
+			go watcher(&g, data, changed)
 			return &g
 		}
 	}
@@ -176,12 +188,8 @@ func New(data string) *Game {
 	}
 	g.g.newKey()
 
-	f, err = os.Create(data)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-	gob.NewEncoder(f).Encode(&g.g)
+	go watcher(&g, data, changed)
+	g.changed <- ping
 
 	return &g
 }
