@@ -3,6 +3,7 @@ package state
 import (
 	"bytes"
 	"encoding/gob"
+	"fmt"
 	"log"
 	"math/rand"
 	"os"
@@ -42,6 +43,62 @@ type PlayerInfo struct {
 	g      *Game
 }
 
+func (g *gameState) findStock(stock string) int {
+	for k, v := range g.Stock {
+		if v.Name == stock {
+			return k
+		}
+	}
+	return -1
+}
+
+func (p *PlayerInfo) Buy(stock string, lots uint64) error {
+	p.g.Lock()
+	defer p.g.Unlock()
+
+	idx := p.g.g.findStock(stock)
+	if idx < 0 {
+		return fmt.Errorf("%s is not on the market", stock)
+	}
+
+	shares := lots * 100
+	afford := p.p.Cash / p.g.g.Stock[idx].Value
+	if shares > afford {
+		return fmt.Errorf("You don't have enough cash to buy %d shares of %s", shares, stock)
+	}
+
+	p.p.Cash -= shares * p.g.g.Stock[idx].Value
+	p.p.Shares[idx] += shares
+
+	// Update caller-visible copies
+	p.Cash = p.p.Cash
+	p.Shares[idx] = p.p.Shares[idx]
+	return nil
+}
+
+func (p *PlayerInfo) Sell(stock string, lots uint64) error {
+	p.g.Lock()
+	defer p.g.Unlock()
+
+	idx := p.g.g.findStock(stock)
+	if idx < 0 {
+		return fmt.Errorf("%s is not on the market", stock)
+	}
+
+	shares := lots * 100
+	if shares > p.p.Shares[idx] {
+		return fmt.Errorf("You don't have %d shares of %s to sell", shares, stock)
+	}
+
+	p.p.Cash += shares * p.g.g.Stock[idx].Value
+	p.p.Shares[idx] -= shares
+
+	// Update caller-visible copies
+	p.Cash = p.p.Cash
+	p.Shares[idx] = p.p.Shares[idx]
+	return nil
+}
+
 func (p *PlayerInfo) SetPassword(pw []byte) {
 	p.g.Lock()
 	p.p.Password = pw
@@ -74,7 +131,7 @@ func (g *Game) Player(name string) *PlayerInfo {
 	defer g.Unlock()
 
 	if _, ok := g.g.Player[name]; !ok {
-		p := &Player{Cash: 500000}
+		p := &Player{Cash: 100000}
 		g.g.Player[name] = p
 	}
 	p := g.g.Player[name]

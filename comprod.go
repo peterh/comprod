@@ -91,6 +91,32 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	p := h.g.Player(name)
+
+	lotsstr := r.FormValue("lots")
+	if len(lotsstr) > 0 {
+		lots, err := strconv.ParseUint(lotsstr, 10, 64)
+		if err != nil {
+			h.err.Execute(w, &errorReason{err.Error()})
+			return
+		}
+		action := r.FormValue("action")
+		switch action {
+		case "buy":
+			err = p.Buy(r.FormValue("stock"), lots)
+		case "sell":
+			err = p.Sell(r.FormValue("stock"), lots)
+		case "":
+		default:
+			h.err.Execute(w, &errorReason{"Unrecognized action: " + action})
+			return
+		}
+		if err != nil {
+			h.err.Execute(w, &errorReason{err.Error()})
+			return
+		}
+	}
+
 	type entry struct {
 		Name   string
 		Cost   uint64
@@ -104,7 +130,6 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		NetWorth template.HTML
 	}
 	s := h.g.ListStocks()
-	p := h.g.Player(name)
 	d := &data{Name: name}
 	nw := p.Cash
 	for k, v := range s {

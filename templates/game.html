@@ -11,5 +11,14 @@
 <tr><td colspan=3>Net Worth</td><td>${{.NetWorth}}</td></tr>
 </tbody>
 </table>
+<form action="/" method="post">
+<p>
+<select name="action"><option value="buy">Buy</option><option value="sell">Sell</option></select>
+<input type="text" name="lots" size=10> board lots of
+<select name="stock">
+{{range .Stocks}}<option value="{{.Name}}">{{.Name}}</option>{{end}}
+</select>
+<input type="submit" value="Go"></p>
+</form>
 </body>
 </html>
