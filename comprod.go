@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bytes"
+	"comprod/state"
 	"flag"
 	"html/template"
 	"log"
@@ -14,7 +14,7 @@ import (
 type handler struct {
 	t   *template.Template
 	err *template.Template
-	g   *gameState
+	g   *state.Game
 }
 
 type errorReason struct {
@@ -49,11 +49,11 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if len(token) > 0 {
 		// New user
-		if len(name) < 1 || token != inviteHash(name) {
+		if len(name) < 1 || token != inviteHash(h.g, name) {
 			h.err.Execute(w, &errorReason{"Invalid invitation"})
 			return
 		}
-		if h.g.hasPlayer(name) {
+		if h.g.HasPlayer(name) {
 			h.err.Execute(w, &errorReason{"You are already registered"})
 			return
 		}
@@ -61,21 +61,21 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			h.err.Execute(w, &errorReason{"Please select a longer password"})
 			return
 		}
-		p := h.g.player(name)
-		p.SetPassword(pwdHash(name, pw))
-		http.SetCookie(w, &http.Cookie{Name: "id", Value: name + "/" + cookieHash(name)})
+		p := h.g.Player(name)
+		p.SetPassword(pwdHash(h.g, name, pw))
+		http.SetCookie(w, &http.Cookie{Name: "id", Value: name + "/" + cookieHash(h.g, name)})
 	} else if len(name) > 1 {
 		// User login
-		if !h.g.hasPlayer(name) {
+		if !h.g.HasPlayer(name) {
 			h.err.Execute(w, &errorReason{"Invalid password or unknown user"})
 			return
 		}
-		p := h.g.player(name)
-		if !bytes.Equal(p.Password, pwdHash(name, pw)) {
+		p := h.g.Player(name)
+		if !p.CheckPassword(pwdHash(h.g, name, pw)) {
 			h.err.Execute(w, &errorReason{"Invalid password or unknown user"})
 			return
 		}
-		http.SetCookie(w, &http.Cookie{Name: "id", Value: name + "/" + cookieHash(name)})
+		http.SetCookie(w, &http.Cookie{Name: "id", Value: name + "/" + cookieHash(h.g, name)})
 	} else {
 		// Returning user
 		c, err := r.Cookie("id")
@@ -85,7 +85,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		i := strings.LastIndex(c.Value, "/")
 		name = c.Value[:i]
-		if len(name) < 1 || c.Value[i+1:] != cookieHash(name) {
+		if len(name) < 1 || c.Value[i+1:] != cookieHash(h.g, name) {
 			login(w, r)
 			return
 		}
@@ -103,8 +103,8 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Cash     template.HTML
 		NetWorth template.HTML
 	}
-	s := h.g.listStocks()
-	p := h.g.player(name)
+	s := h.g.ListStocks()
+	p := h.g.Player(name)
 	d := &data{Name: name}
 	nw := p.Cash
 	for k, v := range s {
@@ -124,17 +124,17 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 type inviter struct {
 	t   *template.Template
 	err *template.Template
-	g   *gameState
+	g   *state.Game
 }
 
 func (i *inviter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
 	token := r.FormValue("i")
-	if len(name) < 1 || token != inviteHash(name) {
+	if len(name) < 1 || token != inviteHash(i.g, name) {
 		i.err.Execute(w, &errorReason{"Invalid invitation"})
 		return
 	}
-	if i.g.hasPlayer(name) {
+	if i.g.HasPlayer(name) {
 		i.err.Execute(w, &errorReason{"You are already registered"})
 		return
 	}
@@ -168,12 +168,12 @@ func main() {
 	http.Handle("/static/",
 		http.StripPrefix("/static/",
 			http.FileServer(http.Dir(filepath.Join(*root, "static")))))
-	game := newGame()
+	game := state.New(*data)
 	http.Handle("/", &handler{gameTemplate, errorTemplate, game})
 	http.Handle("/invite", &inviter{inviteTemplate, errorTemplate, game})
 
 	log.Println("comprod started")
-	log.Printf("To start, visit http://%s%s/invite?name=%s&i=%s\n", *hostname, *port, *admin, inviteHash(*admin))
+	log.Printf("To start, visit http://%s%s/invite?name=%s&i=%s\n", *hostname, *port, *admin, inviteHash(game, *admin))
 
 	log.Fatal(http.ListenAndServe(*port, nil))
 }

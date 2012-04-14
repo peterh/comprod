@@ -1,6 +1,7 @@
-package main
+package state
 
 import (
+	"bytes"
 	"encoding/gob"
 	"log"
 	"math/rand"
@@ -28,26 +29,42 @@ type gameState struct {
 	Player map[string]*Player
 }
 
-func (p *Player) SetPassword(pw []byte) {
-	p.Password = pw
+type Game struct {
+	g gameState
 }
 
-func (g *gameState) listStocks() []Stock {
-	return g.Stock[:]
+type PlayerInfo struct {
+	Cash   uint64
+	Shares [stockTypes]uint64
+	p      *Player
+	g      *Game
 }
 
-func (g *gameState) hasPlayer(name string) bool {
-	_, ok := g.Player[name]
+func (p *PlayerInfo) SetPassword(pw []byte) {
+	p.p.Password = pw
+}
+
+func (p *PlayerInfo) CheckPassword(pw []byte) bool {
+	return bytes.Equal(p.p.Password, pw)
+}
+
+func (g *Game) ListStocks() []Stock {
+	return g.g.Stock[:]
+}
+
+func (g *Game) HasPlayer(name string) bool {
+	_, ok := g.g.Player[name]
 	return ok
 }
 
-func (g *gameState) player(name string) *Player {
-	if p, ok := g.Player[name]; ok {
-		return p
+func (g *Game) Player(name string) *PlayerInfo {
+	if _, ok := g.g.Player[name]; !ok {
+		p := &Player{Cash: 500000}
+		g.g.Player[name] = p
 	}
-	p := &Player{Cash: 500000}
-	g.Player[name] = p
-	return p
+	p := g.g.Player[name]
+
+	return &PlayerInfo{Cash: p.Cash, Shares: p.Shares, p: p, g: g}
 }
 
 func (g *gameState) pickName() string {
@@ -65,36 +82,34 @@ func (g *gameState) pickName() string {
 	return ""
 }
 
-func newGame() *gameState {
+func New(data string) *Game {
 	year, month, day := time.Now().Date()
 	rand.Seed(int64(year)*1000 + int64(month)*100 + int64(day))
 
-	var g gameState
-	f, err := os.Open(*data)
+	var g Game
+	f, err := os.Open(data)
 	if err == nil {
 		defer f.Close()
-		err = gob.NewDecoder(f).Decode(&g)
+		err = gob.NewDecoder(f).Decode(&g.g)
 		if err == nil {
-			g.initKey()
 			return &g
 		}
 	}
 
 	// File not found or gob invalid
-	g.Player = make(map[string]*Player)
+	g.g.Player = make(map[string]*Player)
 	for i := 0; i < stockTypes; i++ {
-		g.Stock[i].Value = startingValue
-		g.Stock[i].Name = g.pickName()
+		g.g.Stock[i].Value = startingValue
+		g.g.Stock[i].Name = g.g.pickName()
 	}
-	g.newKey()
-	g.initKey()
+	g.g.newKey()
 
-	f, err = os.Create(*data)
+	f, err = os.Create(data)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer f.Close()
-	gob.NewEncoder(f).Encode(&g)
+	gob.NewEncoder(f).Encode(&g.g)
 
 	return &g
 }
