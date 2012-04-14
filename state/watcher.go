@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"log"
 	"os"
+	"os/signal"
 	"time"
 )
 
@@ -34,6 +35,10 @@ func (g *Game) write(fn string) {
 
 func watcher(g *Game, filename string, changed chan struct{}) {
 	var tick <-chan time.Time
+
+	sigint := make(chan os.Signal, 1)
+	signal.Notify(sigint, os.Interrupt, os.Kill)
+
 	for {
 		select {
 		case <-changed:
@@ -43,6 +48,12 @@ func watcher(g *Game, filename string, changed chan struct{}) {
 		case <-tick:
 			tick = nil
 			g.write(filename)
+		case <-sigint:
+			if tick != nil {
+				g.write(filename)
+			}
+			log.Println("Exiting")
+			os.Exit(0)
 		}
 	}
 }
