@@ -12,6 +12,7 @@ import (
 
 const stockTypes = 6
 const startingValue = 100
+const splitValue = startingValue * 2
 
 type Player struct {
 	Cash     uint64

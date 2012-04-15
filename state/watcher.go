@@ -64,8 +64,28 @@ func (g *Game) newDay() {
 		switch rand.Intn(3) {
 		case up:
 			g.g.Stock[stock].Value += adjust
+			if g.g.Stock[stock].Value >= splitValue {
+				news = append(news, g.g.Stock[stock].Name+" split 2 for 1")
+				g.g.Stock[stock].Value = (g.g.Stock[stock].Value + 1) / 2
+				before[stock].Value = (before[stock].Value + 1) / 2
+				for _, p := range g.g.Player {
+					p.Shares[stock] *= 2
+				}
+			}
 		case down:
-			g.g.Stock[stock].Value -= adjust
+			if g.g.Stock[stock].Value <= adjust {
+				news = append(news, g.g.Stock[stock].Name+" went bankrupt, and was removed from the market")
+				for _, p := range g.g.Player {
+					p.Shares[stock] = 0
+				}
+				g.g.Stock[stock].Value = startingValue
+				before[stock].Value = startingValue
+				newname := g.g.pickName()
+				news = append(news, newname+" was added to the market")
+				g.g.Stock[stock].Name = newname
+			} else {
+				g.g.Stock[stock].Value -= adjust
+			}
 		case dividend:
 			if g.g.Stock[stock].Value >= startingValue {
 				divpaid[stock] += adjust
