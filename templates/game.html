@@ -4,7 +4,13 @@
 </head>
 <body>
 <h1>Commodity Producers</h1>
-<div id="news"><h3>Today's News</h3>
+<div class="info"><h3>Leader Board</h3>
+<table><thead><tr><th>Name</th><th>Net Worth</th></thead><tbody>
+{{range .Leader}}<tr><td>{{.Name}}</td><td>${{.Worth}}</td></tr>{{end}}
+</tbody>
+</table>
+</div>
+<div class="info"><h3>Today's News</h3>
 <p>{{range .News}}{{.}}<br>{{end}}</p>
 </div>
 <div id="portfolio"><h3>Portfolio</h3>

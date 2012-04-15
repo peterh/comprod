@@ -45,6 +45,11 @@ type PlayerInfo struct {
 	g      *Game
 }
 
+type LeaderInfo struct {
+	Name  string
+	Worth uint64
+}
+
 var ping struct{}
 
 func (g *gameState) findStock(stock string) int {
@@ -147,6 +152,20 @@ func (g *Game) Player(name string) *PlayerInfo {
 	p := g.g.Player[name]
 
 	return &PlayerInfo{Cash: p.Cash, Shares: p.Shares, p: p, g: g}
+}
+
+func (g *Game) Leaders() []LeaderInfo {
+	g.Lock()
+	defer g.Unlock()
+	l := make([]LeaderInfo, 0, len(g.g.Player))
+	for name, p := range g.g.Player {
+		li := LeaderInfo{Name: name, Worth: p.Cash}
+		for i, num := range p.Shares {
+			li.Worth += num * g.g.Stock[i].Value
+		}
+		l = append(l, li)
+	}
+	return l
 }
 
 func (g *Game) News() []string {
