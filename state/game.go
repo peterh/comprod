@@ -25,9 +25,10 @@ type Stock struct {
 }
 
 type gameState struct {
-	Key    []byte
 	Stock  [stockTypes]Stock
 	Player map[string]*Player
+	News   []string
+	Key    []byte
 }
 
 type Game struct {
@@ -147,6 +148,12 @@ func (g *Game) Player(name string) *PlayerInfo {
 	return &PlayerInfo{Cash: p.Cash, Shares: p.Shares, p: p, g: g}
 }
 
+func (g *Game) News() []string {
+	g.Lock()
+	defer g.Unlock()
+	return g.g.News
+}
+
 func (g *gameState) pickName() string {
 	names := [...]string{"Coffee", "Soybeans", "Corn", "Wheat", "Cocoa", "Gold", "Silver", "Platinum", "Oil", "Natural Gas", "Cotton", "Sugar"}
 	used := make(map[string]bool)
@@ -186,6 +193,7 @@ func New(data string) *Game {
 		g.g.Stock[i].Value = startingValue
 		g.g.Stock[i].Name = g.g.pickName()
 	}
+	g.g.News = []string{"A new season started\n"}
 	g.g.newKey()
 
 	go watcher(&g, data, changed)

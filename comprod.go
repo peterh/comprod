@@ -128,9 +128,10 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Stocks   []entry
 		Cash     template.HTML
 		NetWorth template.HTML
+		News     []string
 	}
 	s := h.g.ListStocks()
-	d := &data{Name: name}
+	d := &data{Name: name, News: h.g.News()}
 	nw := p.Cash
 	for k, v := range s {
 		d.Stocks = append(d.Stocks, entry{

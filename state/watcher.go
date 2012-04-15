@@ -2,6 +2,7 @@ package state
 
 import (
 	"encoding/gob"
+	"fmt"
 	"log"
 	"math"
 	"math/rand"
@@ -53,6 +54,10 @@ func (g *Game) newDay() {
 		dividend
 	)
 
+	before := g.g.Stock
+	var divpaid [stockTypes]uint64
+	news := make([]string, 0, stockTypes)
+
 	for i := 0; i < rounds; i++ {
 		adjust := uint64(math.Pow(rand.Float64()*.8+1.2, 5.0))
 		stock := rand.Intn(stockTypes)
@@ -63,12 +68,30 @@ func (g *Game) newDay() {
 			g.g.Stock[stock].Value -= adjust
 		case dividend:
 			if g.g.Stock[stock].Value >= startingValue {
+				divpaid[stock] += adjust
 				for _, p := range g.g.Player {
 					p.Cash += adjust * p.Shares[stock]
 				}
 			}
 		}
 	}
+
+	for k, v := range g.g.Stock {
+		var item string
+		switch {
+		case v.Value == before[k].Value:
+			item = v.Name + " did not change price"
+		case v.Value < before[k].Value:
+			item = fmt.Sprintf("%s fell %.1f%%", v.Name, float64(before[k].Value-v.Value)/float64(before[k].Value)*100)
+		default: // case v.Value > before[k].Value:
+			item = fmt.Sprintf("%s rose %.1f%%", v.Name, float64(v.Value-before[k].Value)/float64(before[k].Value)*100)
+		}
+		if divpaid[k] > 0 {
+			item = fmt.Sprintf("%s, and paid $%d in dividends", item, divpaid[k])
+		}
+		news = append(news, item)
+	}
+	g.g.News = news
 }
 
 func watcher(g *Game, filename string, changed chan struct{}) {
