@@ -3,6 +3,7 @@ package main
 import (
 	"comprod/state"
 	"flag"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -191,6 +192,47 @@ func (i *inviter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	i.t.Execute(w, &d)
 }
 
+func inviteUrl(game *state.Game, name string) string {
+	return fmt.Sprintf("http://%s%s/invite?name=%s&i=%s\n", *hostname, *port, name, inviteHash(game, name))
+}
+
+type newer struct {
+	t   *template.Template
+	err *template.Template
+	g   *state.Game
+}
+
+func (n *newer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	c, err := r.Cookie("id")
+	if err != nil {
+		login(w, r)
+		return
+	}
+	i := strings.LastIndex(c.Value, "/")
+	name := c.Value[:i]
+	if len(name) < 1 || c.Value[i+1:] != cookieHash(n.g, name) {
+		login(w, r)
+		return
+	}
+
+	name = r.FormValue("invitee")
+	if len(name) < 2 {
+		n.err.Execute(w, &errorReason{"Please enter the name of the person you want to invite"})
+		return
+	}
+	if n.g.HasPlayer(name) {
+		n.err.Execute(w, &errorReason{name + " is already registered"})
+		return
+	}
+
+	var d struct {
+		Name, Invite string
+	}
+	d.Name = name
+	d.Invite = inviteUrl(n.g, name)
+	n.t.Execute(w, &d)
+}
+
 func main() {
 	flag.Parse()
 
@@ -200,6 +242,11 @@ func main() {
 	}
 
 	inviteTemplate, err := template.ParseFiles(filepath.Join(*root, "templates", "invite.html"))
+	if err != nil {
+		log.Fatal("Fatal Error: ", err)
+	}
+
+	newTemplate, err := template.ParseFiles(filepath.Join(*root, "templates", "new.html"))
 	if err != nil {
 		log.Fatal("Fatal Error: ", err)
 	}
@@ -215,9 +262,10 @@ func main() {
 	game := state.New(*data)
 	http.Handle("/", &handler{gameTemplate, errorTemplate, game})
 	http.Handle("/invite", &inviter{inviteTemplate, errorTemplate, game})
+	http.Handle("/newinvite", &newer{newTemplate, errorTemplate, game})
 
 	log.Println("comprod started")
-	log.Printf("To start, visit http://%s%s/invite?name=%s&i=%s\n", *hostname, *port, *admin, inviteHash(game, *admin))
+	log.Printf("To start, visit %s\n", inviteUrl(game, *admin))
 
 	log.Fatal(http.ListenAndServe(*port, nil))
 }
