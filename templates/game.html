@@ -20,7 +20,7 @@
 </p>
 </form>
 </div>
-<div id="portfolio"><h3>Portfolio</h3>
+<div id="portfolio"><h3>{{.Name}}'s Portfolio</h3>
 <table><thead><tr><th>Name</th><th>Cost</th><th>Shares</th><th>Value</th></tr></thead><tbody>
 {{range .Stocks}}<tr><td>{{.Name}}</td><td>${{.Cost}}</td><td>{{.Shares}}</td><td>${{.Value}}</td></tr>{{end}}
 <tr><td colspan=3>Cash on Hand</td><td>${{.Cash}}</td></tr>
