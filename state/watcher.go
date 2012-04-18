@@ -17,7 +17,7 @@ func (g *Game) write(fn string) {
 
 	new := fn + ".new"
 	old := fn + ".old"
-	f, err := os.Create(fn + ".new")
+	f, err := os.OpenFile(fn+".new", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		log.Fatal(err)
 	}
