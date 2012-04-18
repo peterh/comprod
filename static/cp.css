@@ -9,6 +9,7 @@ tbody>tr:nth-child(odd) { background-color: Ivory; }
 .info { float: right; clear: right;
         border: 2px solid; border-radius: 15px;
         width: 25%; background-color: white; padding: 10px; }
-.info>h3 { text-align: center; }
+.info h3 { text-align: center; }
+a>h3 { color: blue }
 
 .error { color: red; background-color: white; border-color: black; border-width: 2px; border-style:solid; }
