@@ -44,21 +44,6 @@ func formatValue(value uint64) template.HTML {
 	return template.HTML(strings.Join(chunk, "&thinsp;"))
 }
 
-type LeaderSort []state.LeaderInfo
-
-func (l LeaderSort) Len() int {
-	return len(l)
-}
-func (l LeaderSort) Less(i, j int) bool {
-	if l[i].Worth == l[j].Worth {
-		return l[i].Name < l[j].Name
-	}
-	return l[i].Worth > l[j].Worth
-}
-func (l LeaderSort) Swap(i, j int) {
-	l[i], l[j] = l[j], l[i]
-}
-
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
 	token := r.FormValue("i")
@@ -150,7 +135,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	s := h.g.ListStocks()
 	d := &data{Name: name, News: h.g.News(), Leader: h.g.Leaders()}
-	sort.Sort(LeaderSort(d.Leader))
+	sort.Sort(state.LeaderSort(d.Leader))
 	nw := p.Cash
 	for k, v := range s {
 		d.Stocks = append(d.Stocks, entry{
