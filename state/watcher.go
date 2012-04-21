@@ -54,6 +54,9 @@ func (g *Game) newDay() {
 		dividend
 	)
 
+	g.Lock()
+	defer g.Unlock()
+
 	before := g.g.Stock
 	var divpaid [stockTypes]uint64
 	news := make([]string, 0, stockTypes)
