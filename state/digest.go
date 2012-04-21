@@ -13,7 +13,7 @@ var digest hash.Hash
 
 // newKey must be called under the lock (or in a context
 // where the lock is unnecessary)
-func (g *gameState) newKey() {
+func (g *GameState) newKey() {
 	g.Key = make([]byte, sha1.Size)
 	_, err := io.ReadFull(rand.Reader, g.Key)
 	if err != nil {

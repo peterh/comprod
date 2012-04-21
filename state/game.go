@@ -25,7 +25,7 @@ type Stock struct {
 	Value uint64
 }
 
-type gameState struct {
+type GameState struct {
 	Stock  [stockTypes]Stock
 	Player map[string]*Player
 	News   []string
@@ -33,7 +33,7 @@ type gameState struct {
 }
 
 type Game struct {
-	g gameState
+	g GameState
 	sync.Mutex
 	changed chan<- struct{}
 }
@@ -52,7 +52,7 @@ type LeaderInfo struct {
 
 var ping struct{}
 
-func (g *gameState) findStock(stock string) int {
+func (g *GameState) findStock(stock string) int {
 	for k, v := range g.Stock {
 		if v.Name == stock {
 			return k
@@ -174,7 +174,7 @@ func (g *Game) News() []string {
 	return g.g.News
 }
 
-func (g *gameState) pickName() string {
+func (g *GameState) pickName() string {
 	names := [...]string{"Coffee", "Soybeans", "Corn", "Wheat", "Cocoa", "Gold", "Silver", "Platinum", "Oil", "Natural Gas", "Cotton", "Sugar"}
 	used := make(map[string]bool)
 	for _, v := range g.Stock {
