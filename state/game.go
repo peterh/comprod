@@ -13,6 +13,7 @@ import (
 const stockTypes = 6
 const startingValue = 100
 const splitValue = startingValue * 2
+const startingCash = 100000
 
 type Player struct {
 	Cash     uint64
@@ -145,7 +146,7 @@ func (g *Game) Player(name string) *PlayerInfo {
 	defer g.Unlock()
 
 	if _, ok := g.g.Player[name]; !ok {
-		p := &Player{Cash: 100000}
+		p := &Player{Cash: startingCash}
 		g.g.Player[name] = p
 		g.changed <- ping
 	}
