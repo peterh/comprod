@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"os"
 	"os/signal"
+	"sort"
 	"time"
 )
 
@@ -36,8 +37,17 @@ func (g *Game) write(fn string) {
 	os.Remove(old)
 }
 
-func nextTurn() <-chan time.Time {
+func (g *Game) nextTurn() <-chan time.Time {
+	g.Lock()
+	defer g.Unlock()
+
 	now := time.Now().UTC()
+	prev := g.g.Previous
+
+	if prev.Day() != now.Day() {
+		return time.After(1)
+	}
+
 	tomorrow := now.Add(time.Hour * 23)
 	for tomorrow.Day() == now.Day() {
 		tomorrow = tomorrow.Add(time.Hour)
@@ -56,6 +66,9 @@ func (g *Game) newDay() {
 
 	g.Lock()
 	defer g.Unlock()
+
+	now := time.Now().UTC()
+	defer func() { g.g.Previous = now }()
 
 	before := g.g.Stock
 	var divpaid [stockTypes]uint64
@@ -115,11 +128,20 @@ func (g *Game) newDay() {
 		news = append(news, item)
 	}
 	g.g.News = news
+
+	if now.Month() != g.g.Previous.Month() {
+		leader := g.g.Leaders()
+		sort.Sort(LeaderSort(leader))
+		announce := fmt.Sprintf("The winner of the %s %d season was %s, with a net worth of $%d",
+			g.g.Previous.Month().String(), g.g.Previous.Year(), leader[0].Name, leader[0].Worth)
+		g.g.News = append(g.g.News, announce)
+		g.g.reset()
+	}
 }
 
 func watcher(g *Game, filename string, changed chan struct{}) {
 	var tick <-chan time.Time
-	tock := nextTurn()
+	tock := g.nextTurn()
 
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, os.Interrupt, os.Kill)
@@ -136,7 +158,7 @@ func watcher(g *Game, filename string, changed chan struct{}) {
 		case <-tock:
 			g.newDay()
 			g.write(filename)
-			tock = nextTurn()
+			tock = g.nextTurn()
 		case <-sigint:
 			if tick != nil {
 				g.write(filename)

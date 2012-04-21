@@ -27,10 +27,11 @@ type Stock struct {
 }
 
 type GameState struct {
-	Stock  [stockTypes]Stock
-	Player map[string]*Player
-	News   []string
-	Key    []byte
+	Stock    [stockTypes]Stock
+	Player   map[string]*Player
+	News     []string
+	Key      []byte
+	Previous time.Time
 }
 
 type Game struct {
@@ -158,11 +159,14 @@ func (g *Game) Player(name string) *PlayerInfo {
 func (g *Game) Leaders() []LeaderInfo {
 	g.Lock()
 	defer g.Unlock()
-	l := make([]LeaderInfo, 0, len(g.g.Player))
-	for name, p := range g.g.Player {
+	return g.g.Leaders()
+}
+func (g *GameState) Leaders() []LeaderInfo {
+	l := make([]LeaderInfo, 0, len(g.Player))
+	for name, p := range g.Player {
 		li := LeaderInfo{Name: name, Worth: p.Cash}
 		for i, num := range p.Shares {
-			li.Worth += num * g.g.Stock[i].Value
+			li.Worth += num * g.Stock[i].Value
 		}
 		l = append(l, li)
 	}
@@ -190,6 +194,23 @@ func (g *GameState) pickName() string {
 	return ""
 }
 
+func (g *GameState) reset() {
+	for i := 0; i < stockTypes; i++ {
+		g.Stock[i].Name = ""
+	}
+	for i := 0; i < stockTypes; i++ {
+		g.Stock[i].Value = startingValue
+		g.Stock[i].Name = g.pickName()
+	}
+	for _, p := range g.Player {
+		p.Cash = startingCash
+		for i := range p.Shares {
+			p.Shares[i] = 0
+		}
+	}
+	g.News = append(g.News, "A new season started")
+}
+
 func New(data string) *Game {
 	year, month, day := time.Now().Date()
 	rand.Seed(int64(year)*1000 + int64(month)*100 + int64(day))
@@ -203,6 +224,10 @@ func New(data string) *Game {
 		defer f.Close()
 		err = gob.NewDecoder(f).Decode(&g.g)
 		if err == nil {
+			// Migrate from previous format
+			if g.g.Previous.IsZero() {
+				g.g.Previous = time.Now().UTC()
+			}
 			go watcher(&g, data, changed)
 			return &g
 		}
@@ -210,12 +235,10 @@ func New(data string) *Game {
 
 	// File not found or gob invalid
 	g.g.Player = make(map[string]*Player)
-	for i := 0; i < stockTypes; i++ {
-		g.g.Stock[i].Value = startingValue
-		g.g.Stock[i].Name = g.g.pickName()
-	}
-	g.g.News = []string{"A new season started\n"}
+	g.g.News = make([]string, 0)
 	g.g.newKey()
+	g.g.Previous = time.Now().UTC()
+	g.g.reset()
 
 	go watcher(&g, data, changed)
 	g.changed <- ping
