@@ -218,6 +218,22 @@ func (n *newer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	n.t.Execute(w, &d)
 }
 
+type historian struct {
+	t *template.Template
+	g *state.Game
+}
+
+func (h *historian) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var d struct {
+		History []string
+	}
+	d.History = h.g.History()
+	if len(d.History) < 1 {
+		d.History = []string{"This game is too young to have a history"}
+	}
+	h.t.Execute(w, &d)
+}
+
 func main() {
 	flag.Parse()
 
@@ -236,6 +252,11 @@ func main() {
 		log.Fatal("Fatal Error: ", err)
 	}
 
+	historyTemplate, err := template.ParseFiles(filepath.Join(*root, "templates", "history.html"))
+	if err != nil {
+		log.Fatal("Fatal Error: ", err)
+	}
+
 	errorTemplate, err := template.ParseFiles(filepath.Join(*root, "templates", "error.html"))
 	if err != nil {
 		log.Fatal("Fatal Error: ", err)
@@ -248,6 +269,7 @@ func main() {
 	http.Handle("/", &handler{gameTemplate, errorTemplate, game})
 	http.Handle("/invite", &inviter{inviteTemplate, errorTemplate, game})
 	http.Handle("/newinvite", &newer{newTemplate, errorTemplate, game})
+	http.Handle("/history", &historian{historyTemplate, game})
 
 	log.Println("comprod started")
 	log.Printf("To start, visit %s\n", inviteUrl(game, *admin))

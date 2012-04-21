@@ -30,6 +30,7 @@ type GameState struct {
 	Stock    [stockTypes]Stock
 	Player   map[string]*Player
 	News     []string
+	History  []string
 	Key      []byte
 	Previous time.Time
 }
@@ -135,6 +136,13 @@ func (g *Game) ListStocks() []Stock {
 	return rv
 }
 
+func (g *Game) History() []string {
+	g.Lock()
+	defer g.Unlock()
+
+	return g.g.History
+}
+
 func (g *Game) HasPlayer(name string) bool {
 	g.Lock()
 	_, ok := g.g.Player[name]
@@ -228,6 +236,9 @@ func New(data string) *Game {
 			if g.g.Previous.IsZero() {
 				g.g.Previous = time.Now().UTC()
 			}
+			if g.g.History == nil {
+				g.g.History = make([]string, 0)
+			}
 			go watcher(&g, data, changed)
 			return &g
 		}
@@ -236,6 +247,7 @@ func New(data string) *Game {
 	// File not found or gob invalid
 	g.g.Player = make(map[string]*Player)
 	g.g.News = make([]string, 0)
+	g.g.History = make([]string, 0)
 	g.g.newKey()
 	g.g.Previous = time.Now().UTC()
 	g.g.reset()
