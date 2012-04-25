@@ -29,7 +29,24 @@ func login(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/static/login.html", 307)
 }
 
-func formatValue(value uint64) template.HTML {
+func thinspForAgent(agent string) string {
+	// IE before version 7 mishandles &thinsp;
+	const IEtag = "MSIE "
+	if i := strings.Index(agent, IEtag); i > 0 {
+		version := agent[i+len(IEtag):]
+		if dot := strings.Index(version, "."); dot > 0 {
+			version = version[:dot]
+			if ver, err := strconv.ParseUint(version, 10, 16); err == nil {
+				if ver < 7 {
+					return "&nbsp;"
+				}
+			}
+		}
+	}
+	return "&thinsp;"
+}
+
+func formatValue(value uint64, agent string) template.HTML {
 	s := strconv.FormatUint(value, 10)
 	chunk := make([]string, 0)
 	for len(s) > 0 {
@@ -41,7 +58,8 @@ func formatValue(value uint64) template.HTML {
 			s = ""
 		}
 	}
-	return template.HTML(strings.Join(chunk, "&thinsp;"))
+	sp := thinspForAgent(agent)
+	return template.HTML(strings.Join(chunk, sp))
 }
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -142,12 +160,12 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Name:   v.Name,
 			Cost:   v.Value,
 			Shares: p.Shares[k],
-			Value:  formatValue(p.Shares[k] * v.Value),
+			Value:  formatValue(p.Shares[k]*v.Value, r.UserAgent()),
 		})
 		nw += p.Shares[k] * v.Value
 	}
-	d.Cash = formatValue(p.Cash)
-	d.NetWorth = formatValue(nw)
+	d.Cash = formatValue(p.Cash, r.UserAgent())
+	d.NetWorth = formatValue(nw, r.UserAgent())
 	h.t.Execute(w, d)
 }
 
