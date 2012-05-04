@@ -61,6 +61,21 @@ func formatValue(value uint64, sep string) template.HTML {
 	return template.HTML(strings.Join(chunk, sep))
 }
 
+type formattedInfo struct {
+	Name  string
+	Worth template.HTML
+}
+
+func formatInfo(in []state.LeaderInfo, sep string) []formattedInfo {
+	sort.Sort(state.LeaderSort(in))
+
+	out := make([]formattedInfo, 0, len(in))
+	for _, v := range in {
+		out = append(out, formattedInfo{Name: v.Name, Worth: formatValue(v.Worth, sep)})
+	}
+	return out
+}
+
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
 	token := r.FormValue("i")
@@ -135,7 +150,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	thinsp := thinspForAgent(r.UserAgent())
+	thinsp := thinspForAgent(r.UserAgent()) // USA uses "," instead of "&thinsp;"
 
 	type entry struct {
 		Name   string
@@ -149,13 +164,12 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Cash     template.HTML
 		NetWorth template.HTML
 		News     []string
-		Leader   []state.LeaderInfo
+		Leader   []formattedInfo
 		Invite   bool
 	}
 	s := h.g.ListStocks()
-	d := &data{Name: name, News: h.g.News(), Leader: h.g.Leaders()}
+	d := &data{Name: name, News: h.g.News(), Leader: formatInfo(h.g.Leaders(), thinsp)}
 	d.Invite = name == *admin
-	sort.Sort(state.LeaderSort(d.Leader))
 	nw := p.Cash
 	for k, v := range s {
 		d.Stocks = append(d.Stocks, entry{
