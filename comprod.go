@@ -252,6 +252,14 @@ func (h *historian) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.t.Execute(w, &d)
 }
 
+type logouter struct {
+}
+
+func (l *logouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{Name: "id", Value: ""})
+	login(w, r)
+}
+
 func main() {
 	flag.Parse()
 
@@ -288,6 +296,7 @@ func main() {
 	http.Handle("/invite", &inviter{inviteTemplate, errorTemplate, game})
 	http.Handle("/newinvite", &newer{newTemplate, errorTemplate, game})
 	http.Handle("/history", &historian{historyTemplate, game})
+	http.Handle("/logout", &logouter{})
 
 	log.Println("comprod started")
 	log.Printf("To start, visit %s\n", inviteUrl(game, *admin))
