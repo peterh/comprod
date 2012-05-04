@@ -46,7 +46,7 @@ func thinspForAgent(agent string) string {
 	return "&thinsp;"
 }
 
-func formatValue(value uint64, agent string) template.HTML {
+func formatValue(value uint64, sep string) template.HTML {
 	s := strconv.FormatUint(value, 10)
 	chunk := make([]string, 0)
 	for len(s) > 0 {
@@ -58,8 +58,7 @@ func formatValue(value uint64, agent string) template.HTML {
 			s = ""
 		}
 	}
-	sp := thinspForAgent(agent)
-	return template.HTML(strings.Join(chunk, sp))
+	return template.HTML(strings.Join(chunk, sep))
 }
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -136,6 +135,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	thinsp := thinspForAgent(r.UserAgent())
 
 	type entry struct {
 		Name   string
@@ -162,12 +162,12 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Name:   v.Name,
 			Cost:   v.Value,
 			Shares: p.Shares[k],
-			Value:  formatValue(p.Shares[k]*v.Value, r.UserAgent()),
+			Value:  formatValue(p.Shares[k]*v.Value, thinsp),
 		})
 		nw += p.Shares[k] * v.Value
 	}
-	d.Cash = formatValue(p.Cash, r.UserAgent())
-	d.NetWorth = formatValue(nw, r.UserAgent())
+	d.Cash = formatValue(p.Cash, thinsp)
+	d.NetWorth = formatValue(nw, thinsp)
 	h.t.Execute(w, d)
 }
 
