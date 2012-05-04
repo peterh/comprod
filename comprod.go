@@ -150,9 +150,11 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		NetWorth template.HTML
 		News     []string
 		Leader   []state.LeaderInfo
+		Invite   bool
 	}
 	s := h.g.ListStocks()
 	d := &data{Name: name, News: h.g.News(), Leader: h.g.Leaders()}
+	d.Invite = name == *admin
 	sort.Sort(state.LeaderSort(d.Leader))
 	nw := p.Cash
 	for k, v := range s {
@@ -215,6 +217,10 @@ func (n *newer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	name := c.Value[:i]
 	if len(name) < 1 || c.Value[i+1:] != cookieHash(n.g, name) {
 		login(w, r)
+		return
+	}
+	if name != *admin {
+		n.err.Execute(w, &errorReason{"Only the administrator can invite new players"})
 		return
 	}
 
