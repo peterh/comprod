@@ -7,10 +7,13 @@ td:nth-of-type(n+2) { text-align: right; }
 tbody>tr:nth-child(even) { background-color: MintCream; }
 tbody>tr:nth-child(odd) { background-color: Ivory; }
 
+.menu { position: fixed; top: 0px; right: 0px; }
+.menu a { background-color: AliceBlue;
+	  border-style: dashed; border-radius: 2px; border-color: Azure; }
+
 .info { float: right; clear: right;
         border: 2px solid; border-radius: 15px;
         width: 25%; background-color: white; padding: 10px; }
 .info h3 { text-align: center; }
-a>h3 { color: blue }
 
 .error { color: red; background-color: white; border-color: black; border-width: 2px; border-style:solid; }
