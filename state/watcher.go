@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -136,6 +137,14 @@ func (g *Game) newDay() {
 			g.g.Previous.Month().String(), g.g.Previous.Year(), leader[0].Name, leader[0].Worth)
 		g.g.News = append(g.g.News, announce)
 		g.g.History = append([]string{announce}, g.g.History...)
+		if len(leader) > 1 {
+			rup := []string{}
+			for i := 1; i < len(leader); i++ {
+				rup = append(rup, fmt.Sprintf("%s had $%d", leader[i].Name, leader[i].Worth))
+			}
+			g.g.News = append(g.g.News,
+				fmt.Sprintf("(%s)", strings.Join(rup, ", ")))
+		}
 		g.g.reset()
 	}
 }
