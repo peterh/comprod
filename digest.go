@@ -3,12 +3,9 @@ package main
 import (
 	"comprod/state"
 	"encoding/base64"
-	"hash"
 	"io"
 	"strings"
 )
-
-var digest hash.Hash
 
 func doHash(g *state.Game, thing, name string) string {
 	digest := g.GetHash()
