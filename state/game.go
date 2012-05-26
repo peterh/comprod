@@ -220,8 +220,7 @@ func (g *GameState) reset() {
 }
 
 func New(data string) *Game {
-	year, month, day := time.Now().Date()
-	rand.Seed(int64(year)*1000 + int64(month)*100 + int64(day))
+	rand.Seed(GetSeed())
 
 	var g Game
 	changed := make(chan struct{})

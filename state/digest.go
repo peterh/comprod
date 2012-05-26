@@ -4,6 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha1"
+	"encoding/binary"
 	"hash"
 	"io"
 	"log"
@@ -23,4 +24,9 @@ func (g *Game) GetHash() hash.Hash {
 	g.Lock()
 	defer g.Unlock()
 	return hmac.New(sha1.New, g.g.Key)
+}
+
+func GetSeed() (rv int64) {
+	binary.Read(rand.Reader, binary.LittleEndian, &rv)
+	return
 }
