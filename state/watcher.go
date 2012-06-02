@@ -132,11 +132,13 @@ func (g *Game) newDay() {
 
 	if now.Month() != g.g.Previous.Month() {
 		leader := g.g.Leaders()
-		sort.Sort(LeaderSort(leader))
-		announce := fmt.Sprintf("The winner of the %s %d season was %s, with a net worth of $%d",
-			g.g.Previous.Month().String(), g.g.Previous.Year(), leader[0].Name, leader[0].Worth)
-		g.g.News = append(g.g.News, announce)
-		g.g.History = append([]string{announce}, g.g.History...)
+		if len(leader) > 0 {
+			sort.Sort(LeaderSort(leader))
+			announce := fmt.Sprintf("The winner of the %s %d season was %s, with a net worth of $%d",
+				g.g.Previous.Month().String(), g.g.Previous.Year(), leader[0].Name, leader[0].Worth)
+			g.g.News = append(g.g.News, announce)
+			g.g.History = append([]string{announce}, g.g.History...)
+		}
 		if len(leader) > 1 {
 			rup := []string{}
 			for i := 1; i < len(leader); i++ {
