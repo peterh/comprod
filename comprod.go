@@ -118,8 +118,16 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		i := strings.LastIndex(c.Value, "/")
+		if i < 1 {
+			login(w, r)
+			return
+		}
 		name = c.Value[:i]
 		if len(name) < 1 || c.Value[i+1:] != cookieHash(h.g, name) {
+			login(w, r)
+			return
+		}
+		if !h.g.HasPlayer(name) {
 			login(w, r)
 			return
 		}
