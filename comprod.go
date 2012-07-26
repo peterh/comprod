@@ -264,6 +264,36 @@ func (n *newer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	n.t.Execute(w, &d)
 }
 
+type adminer struct {
+	t   *template.Template
+	err *template.Template
+	g   *state.Game
+}
+
+func (a *adminer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	c, err := r.Cookie("id")
+	if err != nil {
+		login(w, r)
+		return
+	}
+	i := strings.LastIndex(c.Value, "/")
+	name := c.Value[:i]
+	if len(name) < 1 || c.Value[i+1:] != cookieHash(a.g, name) {
+		login(w, r)
+		return
+	}
+	if name != *admin {
+		a.err.Execute(w, &errorReason{"Only the administrator can access the admin console"})
+		return
+	}
+
+	var d struct {
+		Players []state.LeaderInfo
+	}
+	d.Players = a.g.Leaders()
+	a.t.Execute(w, &d)
+}
+
 type historian struct {
 	t *template.Template
 	g *state.Game
@@ -316,6 +346,11 @@ func main() {
 		log.Fatal("Fatal Error: ", err)
 	}
 
+	adminTemplate, err := template.ParseFiles(filepath.Join(*root, "templates", "admin.html"))
+	if err != nil {
+		log.Fatal("Fatal Error: ", err)
+	}
+
 	http.Handle("/static/",
 		http.StripPrefix("/static/",
 			http.FileServer(http.Dir(filepath.Join(*root, "static")))))
@@ -323,6 +358,7 @@ func main() {
 	http.Handle("/", &handler{gameTemplate, errorTemplate, game})
 	http.Handle("/invite", &inviter{inviteTemplate, errorTemplate, game})
 	http.Handle("/newinvite", &newer{newTemplate, errorTemplate, game})
+	http.Handle("/admin", &adminer{adminTemplate, errorTemplate, game})
 	http.Handle("/history", &historian{historyTemplate, game})
 	http.Handle("/logout", &logouter{})
 
