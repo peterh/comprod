@@ -287,6 +287,29 @@ func (a *adminer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	name = r.FormValue("delete")
+	if len(name) >= 2 {
+		var list = []struct {
+			tag, human string
+		}{
+			{"sure", "sure"},
+			{"rsure", "really sure"},
+			{"vsure", "really very sure"},
+			{"noundo", "understanding the gravity of the situation"},
+		}
+		for _, v := range list {
+			if r.FormValue(v.tag) != "yes" {
+				a.err.Execute(w, &errorReason{"You aren't " + v.human})
+				return
+			}
+		}
+
+		if !a.g.DeletePlayer(name) {
+			a.err.Execute(w, &errorReason{name + " is not a registered player"})
+			return
+		}
+	}
+
 	var d struct {
 		Players []state.LeaderInfo
 	}

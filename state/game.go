@@ -150,6 +150,14 @@ func (g *Game) HasPlayer(name string) bool {
 	return ok
 }
 
+func (g *Game) DeletePlayer(name string) bool {
+	g.Lock()
+	defer g.Unlock()
+	_, ok := g.g.Player[name]
+	delete(g.g.Player, name)
+	return ok
+}
+
 func (g *Game) Player(name string) *PlayerInfo {
 	g.Lock()
 	defer g.Unlock()

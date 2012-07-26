@@ -10,5 +10,18 @@
 <input type="text" name="invitee">
 </p>
 </form>
+<h3>Remove Existing Players</h3>
+<dl>{{range .Players}}
+<form action="/admin" method="post">
+    <dt>Delete {{.Name}}?</dt><dd>
+    <input type="hidden" name="delete" value="{{.Name}}">
+    <input type="checkbox" name="sure" value="yes">I'm sure.
+    <input type="checkbox" name="rsure" value="yes">I'm really sure.
+    <input type="checkbox" name="vsure" value="yes">I'm really very sure.
+    <input type="checkbox" name="noundo" value="yes">I understand this action is permanent.
+    <br><input type="submit" value="Delete {{.Name}}!"></dd>
+</form>
+{{end}}
+</dl>
 </body>
 </html>
