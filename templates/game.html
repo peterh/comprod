@@ -23,7 +23,7 @@
 <form action="/" method="post">
 <p>
 <select name="action"><option value="buy">Buy</option><option value="sell">Sell</option></select>
-<input type="text" name="lots" size=10> board lots of
+<input type="text" name="lots" required pattern="\d+" title="Whole number of board lots" size=10> board lots of
 <select name="stock">
 {{range .Stocks}}<option value="{{.Name}}">{{.Name}}</option>{{end}}
 </select>
