@@ -13,7 +13,14 @@ tbody>tr:nth-child(odd) { background-color: Ivory; }
 
 .info { float: right; clear: right;
         border: 2px solid; border-radius: 15px;
-        width: 25%; background-color: white; padding: 10px; }
+        width: 15em; background-color: white; padding: 10px; }
 .info h3 { text-align: center; }
 
 .error { color: red; background-color: white; border-color: black; border-width: 2px; border-style:solid; }
+
+.nowrap { white-space:nowrap; }
+
+@media only screen and (max-width: 550px) {
+    .info { float: none; width: 90%; }
+    .menu { position: inherit; padding-top: 4em; }
+}
