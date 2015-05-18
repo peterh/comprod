@@ -1,7 +1,6 @@
 package main
 
 import (
-	"comprod/state"
 	"flag"
 	"fmt"
 	"html/template"
@@ -11,6 +10,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/peterh/comprod/state"
 )
 
 type handler struct {

@@ -1,10 +1,11 @@
 package main
 
 import (
-	"comprod/state"
 	"encoding/base64"
 	"io"
 	"strings"
+
+	"github.com/peterh/comprod/state"
 )
 
 func doHash(g *state.Game, thing, name string) string {
