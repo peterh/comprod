@@ -25,12 +25,14 @@ func init() {
 	}
 	root = flag.String("root", r, "Directory where static/* and templates/* are found")
 
+	const defState = ".comprodState"
 	var path string
 	my, err := user.Current()
 	if err != nil {
+		path = filepath.Join(os.Getenv("HOME"), defState)
 		log.Println(err)
 	} else {
-		path = filepath.Join(my.HomeDir, ".comprodState")
+		path = filepath.Join(my.HomeDir, defState)
 	}
 	data = flag.String("data", path, "File where game data is stored")
 
