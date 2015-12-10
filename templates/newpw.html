@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html><head><title>Commodity Producers</title>
+<link rel="stylesheet" type="text/css" href="/static/cp.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<h1>Commodity Producers</h1>
+<p>Welcome, {{.Name}}.</p>{{if .Success}}
+<p>Password successfully changed</p>{{else}}
+<form action="/newpw" method="post">
+<p>Old password: <input type="password" name="oldpw"></p>
+<p>New password: <input type="password" name="pw">
+<br>New password again (to confirm): <input type="password" name="pw2"></p>
+<input type="hidden" name="name" value="{{.Name}}">
+<input type="submit" value="Go"></p>
+</form>{{end}}
+<p><a href="/">Return to game</a></p>
+</body>
+</html>

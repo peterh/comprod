@@ -318,6 +318,53 @@ func (a *adminer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	a.t.Execute(w, &d)
 }
 
+type newpwer struct {
+	t   *template.Template
+	err *template.Template
+	g   *state.Game
+}
+
+func (np *newpwer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	c, err := r.Cookie("id")
+	if err != nil {
+		login(w, r)
+		return
+	}
+	i := strings.LastIndex(c.Value, "/")
+	name := c.Value[:i]
+	if len(name) < 1 || c.Value[i+1:] != cookieHash(np.g, name) {
+		login(w, r)
+		return
+	}
+
+	p := np.g.Player(name)
+
+	var d struct {
+		Name    string
+		Success bool
+	}
+
+	pw := r.FormValue("pw")
+	if len(pw) > 1 {
+		// Password Change
+		old := r.FormValue("oldpw")
+		if !p.CheckPassword(pwdHash(np.g, name, old)) {
+			np.err.Execute(w, &errorReason{"Invalid password"})
+			return
+		}
+		pw2 := r.FormValue("pw2")
+		if pw != pw2 {
+			np.err.Execute(w, &errorReason{"New passwords do not match"})
+			return
+		}
+		p.SetPassword(pwdHash(np.g, name, pw))
+		d.Success = true
+	}
+
+	d.Name = name
+	np.t.Execute(w, &d)
+}
+
 type historian struct {
 	t *template.Template
 	g *state.Game
@@ -375,6 +422,11 @@ func main() {
 		log.Fatal("Fatal Error: ", err)
 	}
 
+	newpwTemplate, err := template.ParseFiles(filepath.Join(*root, "templates", "newpw.html"))
+	if err != nil {
+		log.Fatal("Fatal Error: ", err)
+	}
+
 	http.Handle("/static/",
 		http.StripPrefix("/static/",
 			http.FileServer(http.Dir(filepath.Join(*root, "static")))))
@@ -383,6 +435,7 @@ func main() {
 	http.Handle("/invite", &inviter{inviteTemplate, errorTemplate, game})
 	http.Handle("/newinvite", &newer{newTemplate, errorTemplate, game})
 	http.Handle("/admin", &adminer{adminTemplate, errorTemplate, game})
+	http.Handle("/newpw", &newpwer{newpwTemplate, errorTemplate, game})
 	http.Handle("/history", &historian{historyTemplate, game})
 	http.Handle("/logout", &logouter{})
 
