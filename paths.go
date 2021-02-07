@@ -8,23 +8,11 @@ import (
 	"path/filepath"
 )
 
-var root, data, hostname *string
+var data, hostname *string
+var root = flag.String("root", "", "Directory where static/* and templates/* are found (default: use built-in)")
 var port = flag.String("port", ":2012", "TCP port to listen on")
 
 func init() {
-	var r string
-	gopath := os.Getenv("GOPATH")
-	for _, p := range filepath.SplitList(gopath) {
-		path := filepath.Join(p, "src", "comprod")
-		test := filepath.Join(path, "static", "cp.css")
-		_, err := os.Stat(test)
-		if err == nil {
-			r = path
-			break
-		}
-	}
-	root = flag.String("root", r, "Directory where static/* and templates/* are found")
-
 	var path string
 	my, err := user.Current()
 	if err != nil {

@@ -1,12 +1,15 @@
 package main
 
 import (
+	"embed"
 	"flag"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"log"
 	"net/http"
-	"path/filepath"
+	"os"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -389,47 +392,58 @@ func (l *logouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	login(w, r)
 }
 
+//go:embed static templates
+var fsbuiltin embed.FS
+
 func main() {
 	flag.Parse()
+	var fsroot fs.FS = fsbuiltin
+	if *root != "" {
+		fsroot = os.DirFS(*root)
+	}
 
-	gameTemplate, err := template.ParseFiles(filepath.Join(*root, "templates", "game.html"))
+	gameTemplate, err := template.ParseFS(fsroot, path.Join("templates", "game.html"))
 	if err != nil {
 		log.Fatal("Fatal Error: ", err)
 	}
 
-	inviteTemplate, err := template.ParseFiles(filepath.Join(*root, "templates", "invite.html"))
+	inviteTemplate, err := template.ParseFS(fsroot, path.Join("templates", "invite.html"))
 	if err != nil {
 		log.Fatal("Fatal Error: ", err)
 	}
 
-	newTemplate, err := template.ParseFiles(filepath.Join(*root, "templates", "new.html"))
+	newTemplate, err := template.ParseFS(fsroot, path.Join("templates", "new.html"))
 	if err != nil {
 		log.Fatal("Fatal Error: ", err)
 	}
 
-	historyTemplate, err := template.ParseFiles(filepath.Join(*root, "templates", "history.html"))
+	historyTemplate, err := template.ParseFS(fsroot, path.Join("templates", "history.html"))
 	if err != nil {
 		log.Fatal("Fatal Error: ", err)
 	}
 
-	errorTemplate, err := template.ParseFiles(filepath.Join(*root, "templates", "error.html"))
+	errorTemplate, err := template.ParseFS(fsroot, path.Join("templates", "error.html"))
 	if err != nil {
 		log.Fatal("Fatal Error: ", err)
 	}
 
-	adminTemplate, err := template.ParseFiles(filepath.Join(*root, "templates", "admin.html"))
+	adminTemplate, err := template.ParseFS(fsroot, path.Join("templates", "admin.html"))
 	if err != nil {
 		log.Fatal("Fatal Error: ", err)
 	}
 
-	newpwTemplate, err := template.ParseFiles(filepath.Join(*root, "templates", "newpw.html"))
+	newpwTemplate, err := template.ParseFS(fsroot, path.Join("templates", "newpw.html"))
 	if err != nil {
 		log.Fatal("Fatal Error: ", err)
 	}
 
+	staticfs, err := fs.Sub(fsroot, "static")
+	if err != nil {
+		log.Fatal("Fatal error opening static/: ", err)
+	}
 	http.Handle("/static/",
 		http.StripPrefix("/static/",
-			http.FileServer(http.Dir(filepath.Join(*root, "static")))))
+			http.FileServer(http.FS(staticfs))))
 	game := state.New(*data)
 	http.Handle("/", &handler{gameTemplate, errorTemplate, game})
 	http.Handle("/invite", &inviter{inviteTemplate, errorTemplate, game})
